@@ -4,9 +4,7 @@
   </a>
 </p>
 
-<h1 align="center">
-Strix
-</h1>
+<h1 align="center">Strix</h1>
 
 <h2 align="center">Open-source AI Hackers to secure your Apps</h2>
 
@@ -22,15 +20,16 @@ Strix
 [![Website](https://img.shields.io/badge/Website-usestrix.com-2d3748.svg)](https://usestrix.com)
 
 <a href="https://trendshift.io/repositories/15362" target="_blank"><img src="https://trendshift.io/api/badge/repositories/15362" alt="usestrix%2Fstrix | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
 </div>
 
-:star: _Love Strix? Give us a star to help other developers discover it!_
-
-<br />
+<br>
 
 <div align="center">
-<img src=".github/screenshot.png" alt="Strix Demo" width="800" style="border-radius: 16px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2); transform: perspective(1000px) rotateX(2deg); transition: transform 0.3s ease;">
+  <img src=".github/screenshot.png" alt="Strix Demo" width="800" style="border-radius: 16px;">
 </div>
+
+<br>
 
 > [!TIP]
 > **New!** Strix now integrates seamlessly with GitHub Actions and CI/CD pipelines. Automatically scan for vulnerabilities on every pull request and block insecure code before it reaches production!
@@ -41,61 +40,80 @@ Strix
 
 Strix are autonomous AI agents that act just like real hackers - they run your code dynamically, find vulnerabilities, and validate them through actual proof-of-concepts. Built for developers and security teams who need fast, accurate security testing without the overhead of manual pentesting or the false positives of static analysis tools.
 
-- **Full hacker toolkit** out of the box
-- **Teams of agents** that collaborate and scale
-- **Real validation** with PoCs, not false positives
-- **Developer‑first** CLI with actionable reports
-- **Auto‑fix & reporting** to accelerate remediation
+**Key Capabilities:**
+
+- 🔧 **Full hacker toolkit** out of the box
+- 🤝 **Teams of agents** that collaborate and scale
+- ✅ **Real validation** with PoCs, not false positives
+- 💻 **Developer‑first** CLI with actionable reports
+- 🔄 **Auto‑fix & reporting** to accelerate remediation
+
+
+## 🎯 Use Cases
+
+- **Application Security Testing** - Detect and validate critical vulnerabilities in your applications
+- **Rapid Penetration Testing** - Get penetration tests done in hours, not weeks, with compliance reports
+- **Bug Bounty Automation** - Automate bug bounty research and generate PoCs for faster reporting
+- **CI/CD Integration** - Run tests in CI/CD to block vulnerabilities before reaching production
 
 ---
 
-### 🎯 Use Cases
+## 🚀 Quick Start
 
-- Detect and validate critical vulnerabilities in your applications.
-- Get penetration tests done in hours, not weeks, with compliance reports.
-- Automate bug bounty research and generate PoCs for faster reporting.
-- Run tests in CI/CD to block vulnerabilities before reaching production.
-
----
-
-### 🚀 Quick Start
-
-Prerequisites:
+**Prerequisites:**
 - Docker (running)
 - Python 3.12+
-- An LLM provider key (or a local LLM)
+- An LLM provider key (e.g. [get OpenAI API key](https://platform.openai.com/api-keys) or use a local LLM)
+
+### Installation & First Scan
 
 ```bash
-# Install
+# Install Strix
 pipx install strix-agent
 
-# Configure AI provider
+# Configure your AI provider
 export STRIX_LLM="openai/gpt-5"
 export LLM_API_KEY="your-api-key"
 
-# Run security assessment
+# Run your first security assessment
 strix --target ./app-directory
 ```
 
-First run pulls the sandbox Docker image. Results are saved under `agent_runs/<run-name>`.
+> [!NOTE]
+> First run automatically pulls the sandbox Docker image. Results are saved to `strix_runs/<run-name>`
 
-### ☁️ Cloud Hosted
+## ☁️ Run Strix in Cloud
 
-Want to skip the setup? Try our cloud-hosted version: **[usestrix.com](https://usestrix.com)**
+Want to skip the local setup, API keys, and unpredictable LLM costs? Run the hosted cloud version of Strix at **[app.usestrix.com](https://usestrix.com)**.
+
+Launch a scan in just a few minutes—no setup or configuration required—and you’ll get:
+
+- **A full pentest report** with validated findings and clear remediation steps
+- **Shareable dashboards** your team can use to track fixes over time
+- **CI/CD and GitHub integrations** to block risky changes before production
+- **Continuous monitoring** so new vulnerabilities are caught quickly
+
+[**Run your first pentest now →**](https://usestrix.com)
+
+---
 
 ## ✨ Features
 
 ### 🛠️ Agentic Security Tools
 
-- **🔌 Full HTTP Proxy** - Full request/response manipulation and analysis
-- **🌐 Browser Automation** - Multi-tab browser for testing of XSS, CSRF, auth flows
-- **💻 Terminal Environments** - Interactive shells for command execution and testing
-- **🐍 Python Runtime** - Custom exploit development and validation
-- **🔍 Reconnaissance** - Automated OSINT and attack surface mapping
-- **📁 Code Analysis** - Static and dynamic analysis capabilities
-- **📝 Knowledge Management** - Structured findings and attack documentation
+Strix agents come equipped with a comprehensive security testing toolkit:
+
+- **Full HTTP Proxy** - Full request/response manipulation and analysis
+- **Browser Automation** - Multi-tab browser for testing of XSS, CSRF, auth flows
+- **Terminal Environments** - Interactive shells for command execution and testing
+- **Python Runtime** - Custom exploit development and validation
+- **Reconnaissance** - Automated OSINT and attack surface mapping
+- **Code Analysis** - Static and dynamic analysis capabilities
+- **Knowledge Management** - Structured findings and attack documentation
 
 ### 🎯 Comprehensive Vulnerability Detection
+
+Strix can identify and validate a wide range of security vulnerabilities:
 
 - **Access Control** - IDOR, privilege escalation, auth bypass
 - **Injection Attacks** - SQL, NoSQL, command injection
@@ -107,55 +125,51 @@ Want to skip the setup? Try our cloud-hosted version: **[usestrix.com](https://u
 
 ### 🕸️ Graph of Agents
 
+Advanced multi-agent orchestration for comprehensive security testing:
+
 - **Distributed Workflows** - Specialized agents for different attacks and assets
 - **Scalable Testing** - Parallel execution for fast comprehensive coverage
 - **Dynamic Coordination** - Agents collaborate and share discoveries
 
+---
 
 ## 💻 Usage Examples
 
+### Basic Usage
+
 ```bash
-# Local codebase analysis
+# Scan a local codebase
 strix --target ./app-directory
 
-# Repository security review
+# Security review of a GitHub repository
 strix --target https://github.com/org/repo
 
-# Web application assessment
+# Black-box web application assessment
 strix --target https://your-app.com
-
-# Multi-target white-box testing (source code + deployed app)
-strix -t https://github.com/org/app -t https://your-app.com
-
-# Test multiple environments simultaneously
-strix -t https://dev.your-app.com -t https://staging.your-app.com -t https://prod.your-app.com
-
-# Focused testing with instructions
-strix --target api.your-app.com --instruction "Prioritize authentication and authorization testing"
-
-# Testing with credentials
-strix --target https://your-app.com --instruction "Test with credentials: testuser/testpass. Focus on privilege escalation and access control bypasses."
 ```
 
-### ⚙️ Configuration
+### Advanced Testing Scenarios
 
 ```bash
-export STRIX_LLM="openai/gpt-5"
-export LLM_API_KEY="your-api-key"
+# Grey-box authenticated testing
+strix --target https://your-app.com --instruction "Perform authenticated testing using credentials: user:pass"
 
-# Optional
-export LLM_API_BASE="your-api-base-url"  # if using a local model, e.g. Ollama, LMStudio
-export PERPLEXITY_API_KEY="your-api-key"  # for search capabilities
+# Multi-target testing (source code + deployed app)
+strix -t https://github.com/org/app -t https://your-app.com
+
+# Focused testing with custom instructions
+strix --target api.your-app.com --instruction "Focus on business logic flaws and IDOR vulnerabilities"
+
+# Provide detailed instructions through file (e.g., rules of engagement, scope, exclusions)
+strix --target api.your-app.com --instruction-file ./instruction.md
 ```
-
-[📚 View supported AI models](https://docs.litellm.ai/docs/providers)
 
 ### 🤖 Headless Mode
 
 Run Strix programmatically without interactive UI using the `-n/--non-interactive` flag—perfect for servers and automated jobs. The CLI prints real-time vulnerability findings, and the final report before exiting. Exits with non-zero code when vulnerabilities are found.
 
 ```bash
-strix -n --target https://your-app.com --instruction "Focus on authentication and authorization vulnerabilities"
+strix -n --target https://your-app.com
 ```
 
 ### 🔄 CI/CD (GitHub Actions)
@@ -172,7 +186,7 @@ jobs:
   security-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Strix
         run: pipx install strix-agent
@@ -185,50 +199,36 @@ jobs:
         run: strix -n -t ./
 ```
 
-## 🏆 Enterprise Platform
+### ⚙️ Configuration
 
-Our managed platform provides:
+```bash
+export STRIX_LLM="openai/gpt-5"
+export LLM_API_KEY="your-api-key"
 
-- **📈 Executive Dashboards**
-- **🧠 Custom Fine-Tuned Models**
-- **⚙️ CI/CD Integration**
-- **🔍 Large-Scale Scanning**
-- **🔌 Third-Party Integrations**
-- **🎯 Enterprise Support**
+# Optional
+export LLM_API_BASE="your-api-base-url"  # if using a local model, e.g. Ollama, LMStudio
+export PERPLEXITY_API_KEY="your-api-key"  # for search capabilities
+```
 
-[**Get Enterprise Demo →**](https://usestrix.com)
-
-## 🔒 Security Architecture
-
-- **Container Isolation** - All testing in sandboxed Docker environments
-- **Local Processing** - Testing runs locally, no data sent to external services
-
-> [!WARNING]
-> Only test systems you own or have permission to test. You are responsible for using Strix ethically and legally.
+[OpenAI's GPT-5](https://openai.com/api/) (`openai/gpt-5`) and [Anthropic's Claude Sonnet 4.5](https://claude.com/platform/api) (`anthropic/claude-sonnet-4-5`) are the recommended models for best results with Strix. We also support many [other options](https://docs.litellm.ai/docs/providers), including cloud and local models, though their performance and reliability may vary.
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! There are several ways to contribute:
-
-### Code Contributions
-See our [Contributing Guide](CONTRIBUTING.md) for details on:
-- Setting up your development environment
-- Running tests and quality checks
-- Submitting pull requests
-- Code style guidelines
-
-### Prompt Modules Collection
-Help expand our collection of specialized prompt modules for AI agents:
-- Advanced testing techniques for vulnerabilities, frameworks, and technologies
-- See [Prompt Modules Documentation](strix/prompts/README.md) for guidelines
-- Submit via [pull requests](https://github.com/usestrix/strix/pulls) or [issues](https://github.com/usestrix/strix/issues)
-
-## 🌟 Support the Project
-
-**Love Strix?** Give us a ⭐ on GitHub!
+We welcome contributions of code, docs, and new prompt modules - check out our [Contributing Guide](CONTRIBUTING.md) to get started or open a [pull request](https://github.com/usestrix/strix/pulls)/[issue](https://github.com/usestrix/strix/issues).
 
 ## 👥 Join Our Community
 
 Have questions? Found a bug? Want to contribute? **[Join our Discord!](https://discord.gg/YjKFvEZSdZ)**
+
+## 🌟 Support the Project
+
+**Love Strix?** Give us a ⭐ on GitHub!
+## 🙏 Acknowledgements
+
+Strix builds on the incredible work of open-source projects like [LiteLLM](https://github.com/BerriAI/litellm), [Caido](https://github.com/caido/caido), [ProjectDiscovery](https://github.com/projectdiscovery), [Playwright](https://github.com/microsoft/playwright), and [Textual](https://github.com/Textualize/textual). Huge thanks to their maintainers!
+
+
+> [!WARNING]
+> Only test apps you own or have permission to test. You are responsible for using Strix ethically and legally.
 
 </div>

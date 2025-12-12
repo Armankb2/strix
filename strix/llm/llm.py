@@ -2,6 +2,7 @@ import logging
 import os
 from dataclasses import dataclass
 from enum import Enum
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +13,7 @@ from jinja2 import (
     select_autoescape,
 )
 from litellm import ModelResponse, completion_cost
-from litellm.utils import supports_prompt_caching
+from litellm.utils import supports_prompt_caching, supports_vision
 
 from strix.llm.config import LLMConfig
 from strix.llm.memory_compressor import MemoryCompressor
@@ -24,18 +25,16 @@ from strix.tools import get_tools_prompt
 
 logger = logging.getLogger(__name__)
 
-api_key = os.getenv("LLM_API_KEY")
-if api_key:
-    litellm.api_key = api_key
+litellm.drop_params = True
+litellm.modify_params = True
 
-api_base = (
+_LLM_API_KEY = os.getenv("LLM_API_KEY")
+_LLM_API_BASE = (
     os.getenv("LLM_API_BASE")
     or os.getenv("OPENAI_API_BASE")
     or os.getenv("LITELLM_BASE_URL")
     or os.getenv("OLLAMA_API_BASE")
 )
-if api_base:
-    litellm.api_base = api_base
 
 
 class LLMRequestFailedError(Exception):
@@ -45,27 +44,14 @@ class LLMRequestFailedError(Exception):
         self.details = details
 
 
-MODELS_WITHOUT_STOP_WORDS = [
-    "gpt-5",
-    "gpt-5-mini",
-    "gpt-5-nano",
-    "o1-mini",
-    "o1-preview",
-    "o1",
-    "o1-2024-12-17",
-    "o3",
-    "o3-2025-04-16",
-    "o3-mini-2025-01-31",
-    "o3-mini",
-    "o4-mini",
-    "o4-mini-2025-04-16",
+SUPPORTS_STOP_WORDS_FALSE_PATTERNS: list[str] = [
+    "o1*",
     "grok-4-0709",
+    "grok-code-fast-1",
+    "deepseek-r1-0528*",
 ]
 
-REASONING_EFFORT_SUPPORTED_MODELS = [
-    "gpt-5",
-    "gpt-5-mini",
-    "gpt-5-nano",
+REASONING_EFFORT_PATTERNS: list[str] = [
     "o1-2024-12-17",
     "o1",
     "o3",
@@ -76,7 +62,37 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     "o4-mini-2025-04-16",
     "gemini-2.5-flash",
     "gemini-2.5-pro",
+    "gpt-5*",
+    "deepseek-r1-0528*",
+    "claude-sonnet-4-5*",
+    "claude-haiku-4-5*",
 ]
+
+
+def normalize_model_name(model: str) -> str:
+    raw = (model or "").strip().lower()
+    if "/" in raw:
+        name = raw.split("/")[-1]
+        if ":" in name:
+            name = name.split(":", 1)[0]
+    else:
+        name = raw
+    if name.endswith("-gguf"):
+        name = name[: -len("-gguf")]
+    return name
+
+
+def model_matches(model: str, patterns: list[str]) -> bool:
+    raw = (model or "").strip().lower()
+    name = normalize_model_name(model)
+    for pat in patterns:
+        pat_l = pat.lower()
+        if "/" in pat_l:
+            if fnmatch(raw, pat_l):
+                return True
+        elif fnmatch(name, pat_l):
+            return True
+    return False
 
 
 class StepRole(str, Enum):
@@ -117,13 +133,19 @@ class RequestStats:
 
 
 class LLM:
-    def __init__(self, config: LLMConfig, agent_name: str | None = None):
+    def __init__(
+        self, config: LLMConfig, agent_name: str | None = None, agent_id: str | None = None
+    ):
         self.config = config
         self.agent_name = agent_name
+        self.agent_id = agent_id
         self._total_stats = RequestStats()
         self._last_request_stats = RequestStats()
 
-        self.memory_compressor = MemoryCompressor()
+        self.memory_compressor = MemoryCompressor(
+            model_name=self.config.model_name,
+            timeout=self.config.timeout,
+        )
 
         if agent_name:
             prompt_dir = Path(__file__).parent.parent / "agents" / agent_name
@@ -155,6 +177,31 @@ class LLM:
                 self.system_prompt = "You are a helpful AI assistant."
         else:
             self.system_prompt = "You are a helpful AI assistant."
+
+    def set_agent_identity(self, agent_name: str | None, agent_id: str | None) -> None:
+        if agent_name:
+            self.agent_name = agent_name
+        if agent_id:
+            self.agent_id = agent_id
+
+    def _build_identity_message(self) -> dict[str, Any] | None:
+        if not (self.agent_name and str(self.agent_name).strip()):
+            return None
+        identity_name = self.agent_name
+        identity_id = self.agent_id
+        content = (
+            "\n\n"
+            "<agent_identity>\n"
+            "<meta>Internal metadata: do not echo or reference; "
+            "not part of history or tool calls.</meta>\n"
+            "<note>You are now assuming the role of this agent. "
+            "Act strictly as this agent and maintain self-identity for this step. "
+            "Now go answer the next needed step!</note>\n"
+            f"<agent_name>{identity_name}</agent_name>\n"
+            f"<agent_id>{identity_id}</agent_id>\n"
+            "</agent_identity>\n\n"
+        )
+        return {"role": "user", "content": content}
 
     def _add_cache_control_to_content(
         self, content: str | list[dict[str, Any]]
@@ -230,6 +277,10 @@ class LLM:
         step_number: int = 1,
     ) -> LLMResponse:
         messages = [{"role": "system", "content": self.system_prompt}]
+
+        identity_message = self._build_identity_message()
+        if identity_message:
+            messages.append(identity_message)
 
         compressed_history = list(self.memory_compressor.compress_history(conversation_history))
 
@@ -329,38 +380,78 @@ class LLM:
         if not self.config.model_name:
             return True
 
-        actual_model_name = self.config.model_name.split("/")[-1].lower()
-        model_name_lower = self.config.model_name.lower()
-
-        return not any(
-            actual_model_name == unsupported_model.lower()
-            or model_name_lower == unsupported_model.lower()
-            for unsupported_model in MODELS_WITHOUT_STOP_WORDS
-        )
+        return not model_matches(self.config.model_name, SUPPORTS_STOP_WORDS_FALSE_PATTERNS)
 
     def _should_include_reasoning_effort(self) -> bool:
         if not self.config.model_name:
             return False
 
-        actual_model_name = self.config.model_name.split("/")[-1].lower()
-        model_name_lower = self.config.model_name.lower()
+        return model_matches(self.config.model_name, REASONING_EFFORT_PATTERNS)
 
-        return any(
-            actual_model_name == supported_model.lower()
-            or model_name_lower == supported_model.lower()
-            for supported_model in REASONING_EFFORT_SUPPORTED_MODELS
-        )
+    def _model_supports_vision(self) -> bool:
+        if not self.config.model_name:
+            return False
+        try:
+            return bool(supports_vision(model=self.config.model_name))
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _filter_images_from_messages(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        filtered_messages = []
+        for msg in messages:
+            content = msg.get("content")
+            updated_msg = msg
+            if isinstance(content, list):
+                filtered_content = []
+                for item in content:
+                    if isinstance(item, dict):
+                        if item.get("type") == "image_url":
+                            filtered_content.append(
+                                {
+                                    "type": "text",
+                                    "text": "[Screenshot removed - model does not support "
+                                    "vision. Use view_source or execute_js instead.]",
+                                }
+                            )
+                        else:
+                            filtered_content.append(item)
+                    else:
+                        filtered_content.append(item)
+                if filtered_content:
+                    text_parts = [
+                        item.get("text", "") if isinstance(item, dict) else str(item)
+                        for item in filtered_content
+                    ]
+                    all_text = all(
+                        isinstance(item, dict) and item.get("type") == "text"
+                        for item in filtered_content
+                    )
+                    if all_text:
+                        updated_msg = {**msg, "content": "\n".join(text_parts)}
+                    else:
+                        updated_msg = {**msg, "content": filtered_content}
+                else:
+                    updated_msg = {**msg, "content": ""}
+            filtered_messages.append(updated_msg)
+        return filtered_messages
 
     async def _make_request(
         self,
         messages: list[dict[str, Any]],
     ) -> ModelResponse:
+        if not self._model_supports_vision():
+            messages = self._filter_images_from_messages(messages)
+
         completion_args: dict[str, Any] = {
             "model": self.config.model_name,
             "messages": messages,
-            "temperature": self.config.temperature,
-            "timeout": 180,
+            "timeout": self.config.timeout,
         }
+
+        if _LLM_API_KEY:
+            completion_args["api_key"] = _LLM_API_KEY
+        if _LLM_API_BASE:
+            completion_args["api_base"] = _LLM_API_BASE
 
         if self._should_include_stop_param():
             completion_args["stop"] = ["</function>"]
